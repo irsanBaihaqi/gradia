@@ -1,1 +1,513 @@
 @import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+@font-face {
+  font-family: 'HelveticaCustom';
+  src: url('./assets/HelveticaNeueMedium.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ============================================================
+   GRADIA — DESIGN TOKENS
+   Bahasa desain ngikutin referensi (incredibles.dev):
+   bg off-white, kartu putih rounded, label mono, tombol pill.
+   Identitas sendiri: gradient di setiap "media" block (g-1..g-6).
+   ============================================================ */
+:root {
+  --bg:        #F3F2EE;
+  --ink:       #141414;
+  --muted:     #8A8A85;
+  --line:      #D8D6CF;
+  --pink:      #FF3B5C;
+  --cyan:      #18E0D8;
+  --card:      #FFFFFF;
+  --card-dark: #141414;
+
+  /* Font roles */
+  --f-display: 'Archivo Expanded', sans-serif;   /* judul */
+  --f-body:    'Inter', sans-serif;              /* teks */
+  --f-mono:    'Space Mono', monospace;          /* label / meta / tombol */
+  --f-hero:    'HelveticaCustom', sans-serif;    /* wordmark hero */
+
+  /* Rhythm */
+  --radius:    24px;
+  --radius-sm: 14px;
+  --section:   clamp(72px, 10vw, 130px);
+  --gutter:    24px;
+
+  color-scheme: light;
+}
+
+/* ---- NIGHT MODE ----
+   Semua warna komponen nunjuk ke token di atas, jadi cukup override di sini.
+   pink & cyan sengaja dibiarin sama: benang merah identitas di dua mode. */
+[data-theme="dark"]{
+  --bg:        #141310;
+  --ink:       #F3F2EE;
+  --muted:     #9A998F;
+  --line:      #2E2C26;
+  --card:      #1C1A16;
+  --card-dark: #EDEBE4;   /* InfoBand ke-flip jadi panel terang -> kontras di bg gelap */
+
+  color-scheme: dark;
+}
+
+/* Transisi halus pas ganti mode.
+   Cuma di surface yg nggak punya hover-transition, biar hover tombol tetap gesit. */
+body, nav, .media, .price-card, .info-band, .tile{
+  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+html{ scroll-behavior:smooth; }
+
+body{
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-weight: 400;
+  line-height: 1.3;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a{ color:inherit; text-decoration:none; }
+ul{ list-style:none; }
+
+.wrap{
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 32px;
+  position: relative;
+  z-index: 1;
+}
+
+h1,h2,h3,.display{
+  font-family: var(--f-display);
+  letter-spacing: -0.01em;
+  line-height: 1.03;
+}
+
+/* Reveal state dasar (di-drive GSAP di App.jsx) */
+[data-reveal]{ opacity:0; transform:translateY(28px); }
+
+/* ============================================================
+   BUTTONS (pill, label mono uppercase — gaya referensi)
+   ============================================================ */
+.btn{
+  font-family: var(--f-mono);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 13px 24px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform .25s ease, background .25s ease, color .25s ease, border-color .25s ease;
+}
+.btn-solid{ background:var(--ink); color:var(--bg); }
+.btn-solid:hover{ transform:translateY(-2px); }
+.btn-outline{ background:transparent; color:var(--ink); }
+.btn-outline:hover{ background:var(--ink); color:var(--bg); }
+
+/* ============================================================
+   NAV
+   ============================================================ */
+nav{
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+}
+nav .wrap{
+  display:flex; align-items:center; justify-content:space-between;
+  padding-top:18px; padding-bottom:18px;
+}
+.logo{
+  display:flex; align-items:center; gap:9px;
+  font-family: var(--f-display);
+  font-weight:800; font-size:20px; letter-spacing:-.02em;
+  color: var(--ink);
+}
+.logo .dot{
+  width:10px; height:10px; border-radius:50%;
+  background: linear-gradient(135deg, var(--pink), var(--cyan));
+}
+.nav-links{ display:flex; align-items:center; gap:28px; }
+.nav-links a{
+  font-family: var(--f-mono);
+  font-size:12px; font-weight:400; letter-spacing:.02em;
+  text-transform:uppercase; color:var(--muted); transition:color .2s;
+}
+.nav-links a:hover{ color:var(--ink); }
+.nav-links a.btn{ color:var(--bg); } /* tombol tetap terang di atas ink */
+
+/* Toggle light <-> night */
+.theme-toggle{
+  width:38px; height:38px; border-radius:50%;
+  border:1px solid var(--line); background:transparent; color:var(--ink);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  flex-shrink:0;
+  transition:border-color .2s, color .2s, transform .3s ease;
+}
+.theme-toggle:hover{ border-color:var(--ink); transform:rotate(-18deg); }
+.theme-toggle svg{ width:16px; height:16px; }
+
+/* ============================================================
+   HERO — collage tile mengelilingi wordmark
+   ============================================================ */
+.hero{
+  position: relative;
+  z-index: 2;
+  padding: 48px 0 var(--section);
+  text-align: center;
+}
+
+/* ---- Fluid cursor effect (canvas metaball ngejar pointer) ---- */
+.fluid-bg{
+  position: absolute;
+  inset: 0;
+  z-index: 0;                 /* di belakang .wrap (z-index:1) */
+  overflow: hidden;
+  pointer-events: none;       /* jangan blok klik */
+  border-radius: inherit;
+}
+.fluid-bg__canvas{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: blur(14px);         /* nyatuin blob jadi liquid */
+  opacity: .85;
+}
+[data-theme="dark"] .fluid-bg__canvas{ opacity: .95; }
+.fluid-cursor{
+  position: absolute;
+  top: 0; left: 0;
+  width: 8px; height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--pink);
+  opacity: 0;                       /* muncul pas gerakan pointer pertama (di-set via JS) */
+  transition: opacity .25s ease;
+  will-change: transform, opacity;
+}
+@media (hover: none){
+  .fluid-cursor{ display: none; }   /* nggak ada pointer di layar sentuh */
+}
+
+.badges{
+  font-family: var(--f-mono);
+  font-size: 11px; font-weight:400;
+  letter-spacing: .08em; text-transform:uppercase; color:var(--muted);
+  display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-bottom: 40px;
+}
+.badges .dot{ color:var(--pink); }
+
+.hero-collage{
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.collage-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap: 24px;
+  min-height: 150px;
+}
+
+/* Tile = blok gradient rounded (identitas "gradia") */
+.tile{
+  border-radius: var(--radius-sm);
+  box-shadow: 0 18px 40px rgba(20,20,20,.08);
+}
+.tile-single{
+  width: clamp(120px, 16vw, 190px);
+  aspect-ratio: 4 / 3;
+  flex-shrink: 0;
+}
+.tile-cluster{
+  position: relative;
+  width: clamp(150px, 20vw, 230px);
+  height: 160px;
+  flex-shrink: 0;
+}
+.tile-cluster .tile{
+  position: absolute;
+  width: clamp(110px, 13vw, 155px);
+  aspect-ratio: 3 / 4;
+}
+.tile-cluster .tile--back{ top:0; left:0; transform:rotate(-5deg); }
+.tile-cluster .tile--front{ bottom:0; right:0; transform:rotate(4deg); }
+.tile-cluster.align-right{ margin-left:auto; }
+
+/* Wordmark tengah */
+.hero-heading{
+  padding: 8px 0;
+}
+.hero-heading h1{
+  font-family: var(--f-hero);
+  font-weight: 300;
+  font-size: clamp(52px, 12vw, 148px);
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+}
+.hero-heading p{
+  max-width: 520px; margin: 26px auto 0;
+  font-size: 17px; line-height:1.6; color:var(--muted); text-wrap:balance;
+}
+.cta-row{
+  margin-top: 32px;
+  display:flex; justify-content:center; gap:14px; flex-wrap:wrap;
+}
+
+.hero-accent-orb{
+  position: absolute;
+  top: 12%; right: 8%;
+  width: 46px; height: 46px; border-radius:50%;
+  background: radial-gradient(circle at 30% 30%, var(--cyan), var(--pink));
+  filter: blur(1px);
+  z-index: 3;
+}
+
+/* ============================================================
+   GRADIENT FILLS — dipakai .tile & .media (kelas g-1..g-6)
+   ============================================================ */
+.g-1{ background:linear-gradient(135deg, var(--pink) 0%, var(--cyan) 100%); }
+.g-2{ background:linear-gradient(135deg, var(--ink) 0%, var(--pink) 120%); }
+.g-3{ background:linear-gradient(135deg, var(--cyan) 0%, #F7E9D8 120%); }
+.g-4{ background:linear-gradient(135deg, var(--pink) 0%, #7A1533 120%); }
+.g-5{ background:linear-gradient(135deg, var(--cyan) 0%, var(--ink) 130%); }
+.g-6{ background:linear-gradient(120deg, #F7E9D8 0%, var(--pink) 55%, var(--cyan) 130%); }
+
+/* ============================================================
+   SECTION SHARED
+   ============================================================ */
+section{ padding: var(--section) 0; }
+
+.eyebrow{
+  font-family: var(--f-mono);
+  font-size: 12px; font-weight:400; letter-spacing:.1em; text-transform:uppercase;
+  color: var(--pink); margin-bottom:16px;
+}
+.section-title{
+  font-size: clamp(30px, 4.5vw, 52px);
+  max-width: 640px; margin-bottom:32px;
+}
+
+/* Media block (dipakai FeatureHighlight & ShowcaseRow) */
+.media{
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius);
+  overflow: hidden;                 /* biar clip-path reveal di App.jsx rapi */
+  box-shadow: 0 30px 60px rgba(20,20,20,.10);
+}
+.content h3{
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(26px, 3.4vw, 40px);
+  margin-bottom: 18px;
+}
+.content p{
+  font-size: 16px; line-height:1.65; color:var(--muted); max-width:440px; text-wrap:pretty;
+}
+
+/* ---- FeatureHighlight & ShowcaseRow: dua kolom media + teks ---- */
+.feature-highlight .wrap,
+.showcase-row .wrap{
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  gap: clamp(32px, 6vw, 88px);
+}
+/* ShowcaseRow bukan <section>, jadi kasih rhythm sendiri */
+.showcase-row{ padding: calc(var(--section) * 0.5) 0; }
+
+/* Selang-seling: media di kanan saat reversed */
+.showcase-row.is-reversed .media{ order: 2; }
+.showcase-row.is-reversed .content{ order: 1; }
+
+/* ============================================================
+   PROJECTS (#work) — catchphrase + list baris proyek
+   ============================================================ */
+.catchphrase{
+  text-align:center;
+  margin-bottom: clamp(48px, 7vw, 96px);
+}
+.catchphrase h2{
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: clamp(40px, 8vw, 104px);
+  line-height: 0.95; letter-spacing:-0.03em;
+}
+
+.projects-grid{ border-top:1px solid var(--line); }
+.project-card{
+  display:flex; align-items:center; gap:24px;
+  padding: 28px 8px;
+  border-bottom: 1px solid var(--line);
+  transition: padding-left .3s ease, background .3s ease;
+}
+.project-card:hover{ padding-left: 20px; }
+.project-card > div{ flex:1; }
+.p-index{
+  font-family: var(--f-mono);
+  font-size: 13px; color:var(--muted); flex-shrink:0; width:34px;
+}
+.p-title{
+  font-family: var(--f-display);
+  font-weight: 600; font-size: clamp(18px, 2.2vw, 24px);
+  max-width: 560px; line-height:1.15; margin-bottom:8px;
+}
+.p-meta{ display:flex; gap:18px; flex-wrap:wrap; }
+.p-meta span{
+  font-family: var(--f-mono);
+  font-size: 12px; letter-spacing:.02em; color:var(--muted); text-transform:uppercase;
+}
+.p-arrow{
+  width:40px; height:40px; border:1px solid var(--ink); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  font-size:16px; transition:background .25s, color .25s, transform .25s;
+}
+.project-card:hover .p-arrow{
+  background:var(--ink); color:var(--bg); transform:rotate(-45deg);
+}
+
+/* ============================================================
+   PRICING (#pricing) — dua kolom: teks kiri, kartu harga kanan
+   ============================================================ */
+.s-pricing .wrap{
+  display:grid;
+  grid-template-columns: 0.9fr 1fr;
+  gap: clamp(32px, 6vw, 80px);
+  align-items: start;
+}
+.pricing-left p{
+  font-size:16px; line-height:1.65; color:var(--muted); max-width:420px; text-wrap:pretty;
+}
+.price-card{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 44px;
+}
+.price-card .amount{
+  font-family: var(--f-display);
+  font-weight: 800; font-size: 52px; margin:14px 0 8px; letter-spacing:-0.03em;
+}
+.price-card .amount span{ font-size:16px; font-weight:500; color:var(--muted); }
+.price-card p.desc{ color:var(--muted); font-size:14px; margin-bottom:28px; }
+.price-list{ margin:0 0 30px; }
+.price-list li{
+  font-size:14px; padding:11px 0; border-bottom:1px dashed var(--line);
+  display:flex; align-items:center; gap:10px;
+}
+.price-list li:last-child{ border-bottom:none; }
+.price-list li::before{ content:"—"; color:var(--pink); }
+.price-card .btn{ width:100%; justify-content:center; }
+
+/* ============================================================
+   INFO BAND (#contact) — panel gelap besar, brand + link
+   ============================================================ */
+.info-band{
+  background: var(--card-dark);
+  color: var(--bg);
+  border-radius: var(--radius);
+  padding: clamp(40px, 6vw, 72px);
+}
+.info-band-grid{
+  display:grid;
+  grid-template-columns: 1fr 0.8fr;
+  gap: clamp(32px, 6vw, 72px);
+  align-items: start;
+}
+.info-brand h3{
+  font-family: var(--f-display);
+  font-weight:800; font-size: clamp(28px, 4vw, 44px); margin-bottom:18px;
+}
+.info-brand p{
+  color: color-mix(in srgb, var(--bg) 70%, transparent);
+  font-size:16px; line-height:1.6; max-width:360px; margin-bottom:22px;
+}
+.info-brand .email{
+  font-family: var(--f-mono);
+  font-size:14px; letter-spacing:.02em;
+  border-bottom:1px solid color-mix(in srgb, var(--bg) 40%, transparent);
+  padding-bottom:2px; transition:border-color .2s;
+}
+.info-brand .email:hover{ border-color:var(--pink); color:var(--pink); }
+
+.info-links li{ border-top:1px solid color-mix(in srgb, var(--bg) 18%, transparent); }
+.info-links li:last-child{ border-bottom:1px solid color-mix(in srgb, var(--bg) 18%, transparent); }
+.info-links a{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 0; font-size:17px;
+  transition:padding-left .3s ease, color .2s;
+}
+.info-links a:hover{ padding-left:10px; color:var(--pink); }
+.info-links .arrow{ font-size:15px; }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.site-footer{
+  border-top:1px solid var(--line);
+  padding: 30px 0;
+}
+.site-footer .wrap{
+  display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;
+  font-family: var(--f-mono);
+  font-size:12px; color:var(--muted); letter-spacing:.02em;
+}
+.site-footer .flinks{ display:flex; gap:22px; }
+.site-footer .flinks a:hover{ color:var(--ink); }
+
+/* ============================================================
+   NIGHT MODE — polish kedalaman (shadow di bg gelap butuh lebih pekat)
+   ============================================================ */
+[data-theme="dark"] .media,
+[data-theme="dark"] .price-card,
+[data-theme="dark"] .tile{
+  box-shadow: 0 24px 50px rgba(0,0,0,.55);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px){
+  .feature-highlight .wrap,
+  .showcase-row .wrap,
+  .s-pricing .wrap,
+  .info-band-grid{ grid-template-columns: 1fr; }
+
+  .showcase-row.is-reversed .media,
+  .showcase-row.is-reversed .content{ order: initial; }
+}
+
+@media (max-width: 640px){
+  .nav-links a:not(.btn){ display:none; }         /* sisakan tombol CTA di HP */
+  .collage-row{ min-height: 110px; }
+  .tile-cluster .tile--back{ display:none; }        /* rapiin collage di HP */
+  .hero-accent-orb{ display:none; }
+  .project-card{ flex-wrap:wrap; }
+  .p-index{ width:auto; }
+}
+
+/* Aksesibilitas: hormati reduced motion */
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior:auto; }
+  [data-reveal]{ opacity:1 !important; transform:none !important; }
+}
