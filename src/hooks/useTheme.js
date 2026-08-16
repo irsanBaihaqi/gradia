@@ -6,7 +6,6 @@ function getInitialTheme() {
   if (typeof window === 'undefined') return 'light'
   const saved = localStorage.getItem(KEY)
   if (saved === 'light' || saved === 'dark') return saved
-  // default ikut preferensi OS
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -18,7 +17,7 @@ export function useTheme() {
     try {
       localStorage.setItem(KEY, theme)
     } catch {
-      /* localStorage bisa diblok (mode privat) — abaikan aja */
+
     }
   }, [theme])
 

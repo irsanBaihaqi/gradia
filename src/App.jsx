@@ -5,18 +5,18 @@ import { useGSAP } from '@gsap/react'
 import Lenis from 'lenis'
 import Nav from './components/Nav'
 import Hero from './components/Hero'
-import FeatureHighlight from './components/FeatureHighlight'
-import ShowcaseRow from './components/ShowcaseRow'
+import InfoBrand from './components/InfoBrand'
+import LetSee from './components/LetSee'
 import ProjectsGrid from './components/ProjectsGrid'
 import Pricing from './components/Pricing'
-import InfoBand from './components/InfoBand'
+import QandA from './components/QandA'
+import Footer from './components/Footer'
+import ScrollTop from './components/ScrollTop'
 
 gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 export default function App() {
   const appRef = useRef(null)
-
-  /* ===== SMOOTH SCROLL BERINERSIA (Lenis) ===== */
   useEffect(() => {
     const lenis = new Lenis({ duration: 1.15, smoothWheel: true })
     lenis.on('scroll', ScrollTrigger.update)
@@ -32,8 +32,6 @@ export default function App() {
   useGSAP(() => {
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduce) return
-
-    /* reveal generik untuk semua [data-reveal] */
     gsap.utils.toArray('[data-reveal]:not([data-reveal="media"])').forEach((el) => {
       gsap.to(el, {
         opacity: 1,
@@ -43,8 +41,6 @@ export default function App() {
         scrollTrigger: { trigger: el, start: 'top 85%', toggleActions: 'play none none reverse' },
       })
     })
-
-    /* clip-path reveal untuk media/gambar */
     gsap.utils.toArray('[data-reveal="media"]').forEach((el) => {
       gsap.fromTo(
         el,
@@ -70,42 +66,16 @@ export default function App() {
   return (
     <div ref={appRef}>
       <Nav />
-      <Hero />
-
-      <FeatureHighlight
-        eyebrow="Layanan Utama"
-        title="Landing Page"
-        text="Satu halaman, satu tujuan: mengubah pengunjung jadi pelanggan. Kami rancang dengan copy yang tajam, animasi yang halus, dan performa yang cepat — siap pakai untuk peluncuran produk atau kampanye singkat."
-        mediaClass="g-2"
-      />
-
-      <ShowcaseRow
-        title="Company Profile"
-        text="Situs company profile yang menonjolkan kredibilitas brand kamu — struktur informasi yang jelas, desain yang rapi, dan mudah dikelola tanpa bantuan developer setiap saat."
-        mediaClass="g-6"
-        reversed
-      />
-
-      <ShowcaseRow
-        title="Toko Online"
-        text="Etalase digital yang siap jualan. Dari katalog produk sampai checkout, kami bangun toko online yang cepat, aman, dan enak dipakai di HP maupun desktop."
-        mediaClass="g-1"
-      />
-
-      <ProjectsGrid />
-      <Pricing />
-      <InfoBand />
-
-      <footer className="site-footer">
-        <div className="wrap">
-          <span>© 2026 Gradia Digital — dibuat dengan Vite &amp; GSAP.</span>
-          <div className="flinks">
-            <a href="#">Legal</a>
-            <a href="#">Privasi</a>
-            <a href="#">LinkedIn</a>
-          </div>
-        </div>
-      </footer>
+      <ScrollTop />
+      <main>
+        <Hero />
+        <InfoBrand />
+        <LetSee />
+        <ProjectsGrid />
+        <Pricing />
+        <QandA/>
+      </main>
+      <Footer/>
     </div>
   )
 }
