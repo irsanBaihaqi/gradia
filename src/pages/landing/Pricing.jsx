@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Link } from "react-router-dom";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -9,7 +10,7 @@ const PRICING_PLANS = [
   {
     id: "01",
     name: "Landing Page",
-    badge: "Fast Launch",
+    webTypeOption: "Landing Page", // Value sesuai opsi form di Contact.jsx
     price: "Rp 1.500.000",
     description:
       "Solusi cepat & efektif untuk promosi produk, event, atau campaign bisnis Anda.",
@@ -27,7 +28,7 @@ const PRICING_PLANS = [
   {
     id: "02",
     name: "Standard Web",
-    badge: "Most Popular",
+    webTypeOption: "Website", // Value sesuai opsi form di Contact.jsx
     price: "Rp 3.500.000",
     description:
       "Website Company Profile multi-halaman lengkap untuk meningkatkan kepercayaan calon klien.",
@@ -46,7 +47,7 @@ const PRICING_PLANS = [
   {
     id: "03",
     name: "Premium System",
-    badge: "Full Custom",
+    webTypeOption: "CMS Web", // Value sesuai opsi form di Contact.jsx
     price: "Rp 7.000.000+",
     description:
       "Sistem aplikasi web custom kompleks (E-commerce, Portal, SaaS, Sistem Manajemen).",
@@ -71,7 +72,6 @@ export default function Pricing() {
     () => {
       const cards = gsap.utils.toArray(".pricing-card");
 
-      // Animasi aman menggunakan opacity awal & refresh ScrollTrigger
       gsap.fromTo(
         cards,
         { y: 50, opacity: 0 },
@@ -103,7 +103,7 @@ export default function Pricing() {
         <h2 className="text-4xl sm:text-6xl font-hero tracking-tight leading-none mt-2 text-[var(--ink)]">
           Paket Layanan & Harga
         </h2>
-        <p className="text-base sm:text-lg opacity-80 mt-4 max-w-xl mx-auto">
+        <p className="text-base sm:text-lg opacity-80 mt-4 max-w-xl mx-auto font-sans">
           Pilih paket yang sesuai dengan skala bisnis dan kebutuhan pengembangan
           web Anda.
         </p>
@@ -120,7 +120,7 @@ export default function Pricing() {
                 : "bg-[var(--card)] text-[var(--ink)]"
             }`}
           >
-            {/* Header Card & Badge */}
+            {/* Header Card & Features */}
             <div>
               <h3 className="text-3xl font-hero tracking-tight">{plan.name}</h3>
 
@@ -131,7 +131,7 @@ export default function Pricing() {
                 </span>
               </div>
 
-              <p className="text-xs sm:text-sm opacity-80 leading-relaxed mb-8">
+              <p className="text-xs sm:text-sm opacity-80 leading-relaxed mb-8 font-sans">
                 {plan.description}
               </p>
 
@@ -152,19 +152,19 @@ export default function Pricing() {
                 ))}
               </ul>
             </div>
-
-            {/* CTA Button (Tanpa Link Luar) */}
             <div>
-              <button
-                type="button"
+              <Link
+                to="/contact"
+                state={{ selectedWebType: plan.webTypeOption }}
                 className={`inline-flex items-center justify-between w-full px-6 py-4 font-mono text-xs uppercase font-bold tracking-wider border transition-all duration-300 hover:-translate-y-1 ${
                   plan.highlight
                     ? "bg-[var(--bg)] text-[var(--ink)] border-[var(--bg)]"
                     : "bg-[var(--ink)] text-[var(--bg)] border-[var(--ink)] hover:opacity-90"
                 }`}
               >
-                {plan.ctaText}
-              </button>
+                <span>{plan.ctaText}</span>
+                <span>↗</span>
+              </Link>
             </div>
           </div>
         ))}
