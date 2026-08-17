@@ -1,29 +1,55 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useRef, useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
 gsap.registerPlugin(useGSAP);
-
-export default function Contact() {
+const GOOGLE_SHEETS_SCRIPT_URL =
+  "***";
+const PRICE_MAP = {
+  "Landing Page": 1500000,
+  Website: 3500000,
+  "CMS Web": 7000000,
+};
+export default function Payment() {
   const containerRef = useRef(null);
   const pillRef = useRef(null);
+  const location = useLocation();
 
   // State Tab Switcher
   const [activeTab, setActiveTab] = useState("details");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Tangkap pilihan jenis web dari Pricing.jsx (default: 'Landing Page')
+  const initialWebType = location.state?.selectedWebType || "Landing Page";
 
   // State Form Data
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     company: "",
-    webType: "Landing Page",
+    webType: initialWebType,
     timelineType: "Standar",
     description: "",
     paymentMethod: "qris",
   });
+  useEffect(() => {
+    const snapScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
+    const clientKey = "SB-Mid-client-XXXXXX";
 
-  // Validasi: Memastikan field utama terisi
+    const script = document.createElement("script");
+    script.src = snapScriptUrl;
+    script.setAttribute("data-client-key", clientKey);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const basePrice = PRICE_MAP[formData.webType] || 1500000;
+  const dpAmount = basePrice * 0.5;
+
   const isFormValid = Boolean(
     formData.name.trim() &&
     formData.phone.trim() &&
@@ -43,7 +69,6 @@ export default function Contact() {
 
   // Handler Pindah Tab
   const handleTabChange = (tab) => {
-    // Kunci tab pembayaran jika form belum terisi
     if (tab === "payment" && !isFormValid) return;
 
     setActiveTab(tab);
@@ -65,10 +90,75 @@ export default function Contact() {
     );
   };
 
-  const handleProceedToPayment = (e) => {
+  // 1. Submit Form Pertama -> Kirim ke Google Sheets & Pindah ke Pembayaran
+  const handleProceedToPayment = async (e) => {
     e.preventDefault();
-    if (isFormValid) {
+    if (!isFormValid) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Kirim Data Pemesan ke Google Spreadsheet via Apps Script
+      await fetch(GOOGLE_SHEETS_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          ...formData,
+          totalPrice: basePrice,
+          dpAmount: dpAmount,
+          status: "Pending Payment",
+        }),
+      });
+
+      // Pindah ke Tab Pembayaran
       handleTabChange("payment");
+    } catch (error) {
+      console.error("Gagal menyimpan data ke Google Sheets:", error);
+      alert("Terjadi kesalahan teknis. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMidtransPayment = async () => {
+    if (!window.snap) {
+      alert(
+        "Sistem pembayaran sedang disiapkan. Silakan coba beberapa detik lagi.",
+      );
+      return;
+    }
+
+    try {
+      // Panggil backend API Anda untuk mendapatkan Transaction Snap Token
+      // Contoh: const response = await fetch('/api/create-transaction', { method: 'POST', body: JSON.stringify(...) });
+      // const { token } = await response.json();
+
+      // Memicu Pop-up Midtrans Snap (Gunakan Snap Token dari backend Anda)
+      window.snap.pay("YOUR_SNAP_TRANSACTION_TOKEN", {
+        onSuccess: function (result) {
+          alert(
+            `Pembayaran DP Berhasil!\n\nInvoice PDF telah dikirimkan ke email Anda. Tim Gradia Studio akan segera menghubungi No. WhatsApp (${formData.phone}) Anda untuk koordinasi pengerjaan proyek.`,
+          );
+          console.log("Midtrans Success:", result);
+        },
+        onPending: function (result) {
+          alert(
+            "Menunggu pembayaran Anda. Silakan selesaikan transaksi sesuai petunjuk.",
+          );
+          console.log("Midtrans Pending:", result);
+        },
+        onError: function (result) {
+          alert("Pembayaran gagal atau dibatalkan. Silakan coba kembali.");
+          console.error("Midtrans Error:", result);
+        },
+        onClose: function () {
+          alert("Anda menutup halaman pembayaran sebelum transaksi selesai.");
+        },
+      });
+    } catch (err) {
+      console.error("Gagal memproses transaksi Midtrans:", err);
     }
   };
 
@@ -104,7 +194,7 @@ export default function Contact() {
 
       {/* Main 2-Column Layout */}
       <div className="max-w-6xl w-full mx-auto my-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
-        {/* Left Column: Heading & Paragraph (Sesuai Layout Foto) */}
+        {/* Left Column */}
         <div className="anim-left lg:col-span-5 flex flex-col gap-6 pt-4">
           <h1 className="text-5xl lg:text-7xl font-medium tracking-tight leading-[0.95] text-black">
             Simple <br />
@@ -296,14 +386,16 @@ export default function Contact() {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || isSubmitting}
                     className={`w-full py-4 text-xs font-bold uppercase tracking-wider rounded-xl transition-all ${
-                      isFormValid
-                        ? "bg-[var(--color-accent)] text-white hover:brightness-110 cursor-pointer shadow-md"
+                      isFormValid && !isSubmitting
+                        ? "bg-black text-white hover:bg-neutral-800 cursor-pointer shadow-md"
                         : "bg-black/10 text-black/30 cursor-not-allowed"
                     }`}
                   >
-                    Lanjut ke Pembayaran
+                    {isSubmitting
+                      ? "Menyimpan Data..."
+                      : "Lanjut ke Pembayaran"}
                   </button>
                 </form>
               )}
@@ -313,14 +405,15 @@ export default function Contact() {
                 <div className="flex flex-col justify-between h-full gap-6">
                   <div>
                     <h2 className="text-2xl font-semibold tracking-tight text-black">
-                      Pembayaran
+                      Pembayaran DP (50%)
                     </h2>
                     <p className="text-xs opacity-60 mt-1">
-                      Konfirmasi rincian pesanan dan selesaikan transaksi.
+                      Selesaikan transaksi awal untuk memulai pengerjaan proyek
+                      Anda.
                     </p>
                   </div>
 
-                  {/* Ringkasan Data */}
+                  {/* Ringkasan Data & Tagihan DP */}
                   <div className="bg-[#F4F4F4] p-5 rounded-2xl flex flex-col gap-3 text-xs">
                     <div className="flex justify-between items-center pb-2 border-b border-black/10">
                       <span className="font-bold uppercase tracking-wider opacity-50">
@@ -334,6 +427,7 @@ export default function Contact() {
                         Ubah
                       </button>
                     </div>
+
                     <div className="grid grid-cols-2 gap-3 text-black">
                       <div>
                         <span className="opacity-50 block">Nama:</span>
@@ -352,42 +446,42 @@ export default function Contact() {
                         <strong>{formData.timelineType}</strong>
                       </div>
                     </div>
+
+                    <div className="mt-2 pt-3 border-t border-black/10 flex justify-between items-center">
+                      <span className="font-semibold">
+                        Total Tagihan DP (50%):
+                      </span>
+                      <span className="text-base font-bold font-mono text-emerald-600">
+                        Rp {dpAmount.toLocaleString("id-ID")}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Pilihan Metode Pembayaran */}
-                  <div className="flex flex-col gap-2 pt-2 border-t border-black/10">
-                    <span className="text-[10px] font-bold tracking-widest uppercase opacity-40">
-                      METODE PEMBAYARAN
-                    </span>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: "qris", label: "QRIS Instant" },
-                        { id: "transfer", label: "Bank Transfer" },
-                        { id: "card", label: "Kartu Kredit" },
-                      ].map((item) => (
-                        <button
-                          type="button"
-                          key={item.id}
-                          onClick={() => handleSelect("paymentMethod", item.id)}
-                          className={`py-3 px-3 text-xs font-semibold rounded-xl text-center transition-all cursor-pointer ${
-                            formData.paymentMethod === item.id
-                              ? "bg-black text-white"
-                              : "bg-[#F4F4F4] text-black hover:bg-[#EAEAEA]"
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
+                  {/* Metrik Alur Layanan */}
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-[11px] text-emerald-900 leading-relaxed">
+                    <strong>Alur Setelah Pembayaran:</strong>
+                    <ol className="list-decimal list-inside mt-1 space-y-1">
+                      <li>
+                        Transaksi diverifikasi otomatis oleh Gateway Midtrans.
+                      </li>
+                      <li>
+                        Invoice PDF resmi akan dikirimkan otomatis ke email
+                        Anda.
+                      </li>
+                      <li>
+                        Tim Gradia Studio akan menghubungi WhatsApp Anda untuk
+                        koordinasi detail.
+                      </li>
+                    </ol>
                   </div>
 
                   {/* Tombol Konfirmasi Akhir */}
                   <button
                     type="button"
-                    onClick={() => alert("Pesanan Berhasil Dikonfirmasi!")}
-                    className="w-full py-4 bg-[var(--color-accent)] text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:brightness-110 transition-all cursor-pointer shadow-md"
+                    onClick={handleMidtransPayment}
+                    className="w-full py-4 bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-neutral-800 transition-all cursor-pointer shadow-md"
                   >
-                    Konfirmasi & Bayar DP
+                    Bayar DP Sekarang (Rp {dpAmount.toLocaleString("id-ID")}) ↗
                   </button>
                 </div>
               )}
@@ -395,9 +489,6 @@ export default function Contact() {
           </div>
         </div>
       </div>
-      <footer className="anim-left text-center text-[10px] opacity-40 shrink-0">
-        © Gradia. Sleek, minimal & modern web solutions.
-      </footer>
     </main>
   );
 }
