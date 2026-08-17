@@ -3,37 +3,59 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger);
 
 export default function InfoBrand() {
   const brandRef = useRef(null);
 
   useGSAP(
     () => {
-      // Parallax Lift Effect saat di-scroll
-      gsap.from(brandRef.current, {
-        yPercent: 20,
-        ease: "none",
-        scrollTrigger: {
-          trigger: brandRef.current,
-          start: "top bottom",
-          end: "top top",
-          scrub: true,
-        },
-      });
+      const scopeEl = brandRef.current;
+      if (!scopeEl) return;
 
-      // Reveal Animation untuk Bento Items
-      gsap.from(".card-bento", {
-        y: 30,
-        opacity: 0,
-        duration: 0.8,
-        stagger: 0.1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: brandRef.current,
-          start: "top 70%",
+      // 1. Parallax Lift Effect (Menggunakan yPercent halus)
+      gsap.fromTo(
+        scopeEl,
+        { yPercent: 15 },
+        {
+          yPercent: 0,
+          ease: "none",
+          scrollTrigger: {
+            trigger: scopeEl,
+            start: "top bottom",
+            end: "top top",
+            scrub: true,
+            invalidateOnRefresh: true,
+          },
         },
-      });
+      );
+
+      // 2. Reveal Animation dengan fromTo agar terhindar dari bug "konten hilang saat refresh"
+      const cards = scopeEl.querySelectorAll(".card-bento, .card-bento-dark");
+
+      if (cards.length > 0) {
+        gsap.fromTo(
+          cards,
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power3.out",
+            clearProps: "transform", // Menghapus properti inline setelah animasi selesai agar layout CSS murni tetap aman
+            scrollTrigger: {
+              trigger: scopeEl,
+              start: "top 75%",
+              toggleActions: "play none none reverse",
+              invalidateOnRefresh: true,
+            },
+          },
+        );
+      }
+
+      // Memaksa refresh ScrollTrigger setelah komponen terpasang sepenuhnya
+      ScrollTrigger.refresh();
     },
     { scope: brandRef },
   );
@@ -42,7 +64,7 @@ export default function InfoBrand() {
     <section
       ref={brandRef}
       id="brand"
-      className="relative z-20 min-h-screen py-24 px-6 sm:px-12 bg-[var(--bg)] text-[var(--ink)] transition-colors duration-300 select-none flex flex-col justify-center"
+      className="relative z-20 min-h-screen py-24 px-6 sm:px-12 bg-[var(--bg)] text-[var(--ink)] transition-colors duration-300 select-none flex flex-col justify-center will-change-transform"
     >
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-2">
         {/* BENTO CARD 1 */}
@@ -53,6 +75,9 @@ export default function InfoBrand() {
               <img
                 src="https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?q=80&w=600&auto=format&fit=crop"
                 alt="Website Portfolio Preview"
+                loading="lazy"
+                decoding="async"
+                onLoad={() => ScrollTrigger.refresh()} // Hitung ulang trigger setelah gambar berhasil dimuat
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
 

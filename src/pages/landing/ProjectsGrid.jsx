@@ -51,36 +51,19 @@ export default function ProjectsGrid() {
       const trackEl = trackRef.current;
       if (!containerEl || !trackEl) return;
 
-      const getScrollWidth = () => {
-        return trackEl.scrollWidth - window.innerWidth + 50;
+      const getScrollAmount = () => {
+        return trackEl.scrollWidth - window.innerWidth;
       };
-
-      // 1. Animasi Parallax Slide-Up (Meluncur dari bawah menutupi LetSee)
-      gsap.fromTo(
-        containerEl,
-        { y: "100%" },
-        {
-          y: "0%",
-          ease: "none",
-          scrollTrigger: {
-            trigger: containerEl,
-            start: "top bottom",
-            end: "top top",
-            scrub: true,
-          },
-        }
-      );
-
-      // 2. Pin & Horizontal Scroll setelah menutupi layar sepenuhnya
       gsap.to(trackEl, {
-        x: () => -getScrollWidth(),
+        x: () => -getScrollAmount(),
         ease: "none",
         scrollTrigger: {
           trigger: containerEl,
           start: "top top",
-          end: () => `+=${getScrollWidth() * 1.2}`,
+          end: () => `+=${getScrollAmount()}`,
           pin: true,
-          scrub: 1.2,
+          pinSpacing: true,
+          scrub: 1,
           anticipatePin: 1,
           invalidateOnRefresh: true,
         },
@@ -93,44 +76,40 @@ export default function ProjectsGrid() {
     <section
       ref={containerRef}
       id="work"
-      className="relative z-30 h-screen bg-[var(--bg)] text-[var(--ink)] overflow-hidden transition-colors duration-300 flex items-center select-none will-change-transform"
+      className="relative z-20 h-screen bg-[var(--bg)] text-[var(--ink)] overflow-hidden transition-colors duration-300 flex items-center select-none"
     >
       <div
         ref={trackRef}
-        className="flex flex-row h-full w-max pl-6 sm:pl-16 pr-32 sm:pr-64 py-8 sm:py-0 items-center gap-6 sm:gap-12"
+        className="flex flex-row h-full w-max pl-6 sm:pl-16 pr-32 sm:pr-64 py-8 sm:py-0 items-center gap-4 sm:gap-8 will-change-transform"
       >
         {PROJECTS.map((project) => (
           <div
             key={project.id}
             className="project-card w-[88vw] sm:w-[78vw] max-w-[1200px] h-[82vh] sm:h-[70vh] border border-[var(--ink)] bg-[var(--card)] flex flex-col sm:flex-row items-stretch shrink-0 my-auto overflow-hidden transition-all duration-300 hover:shadow-2xl"
           >
-            {/* SISI KIRI: Gambar Project (60% Width) */}
+            {/* SISI KIRI: Gambar Project */}
             <div className="w-full sm:w-[60%] h-[45%] sm:h-full relative overflow-hidden group shrink-0 bg-neutral-900">
               <img
                 src={project.image}
                 alt={project.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
               />
               <div className="absolute top-4 left-4">
-                <span className="badge-tag">
-                  [{project.id}]
-                </span>
+                <span className="badge-tag">[{project.id}]</span>
               </div>
             </div>
 
-            {/* SISI KANAN: Penjelasan UI/UX Refined (40% Width) */}
+            {/* SISI KANAN: Penjelasan UI/UX */}
             <div className="w-full sm:w-[40%] h-[55%] sm:h-full p-6 sm:p-10 flex flex-col justify-between shrink-0 bg-[var(--card)] overflow-y-auto">
               <div>
                 <span className="text-label-mono text-[var(--muted)] block mb-1">
                   {project.category}
                 </span>
 
-                {/* Title */}
-                <h3 className="heading-card mt-1">
-                  {project.title}
-                </h3>
+                <h3 className="heading-card mt-1">{project.title}</h3>
 
-                {/* Description */}
                 <p className="text-subtext text-xs sm:text-sm md:text-base mt-4 font-sans">
                   {project.description}
                 </p>
@@ -145,7 +124,7 @@ export default function ProjectsGrid() {
                   {project.tech.map((item, idx) => (
                     <span
                       key={idx}
-                      className="text-label-mono text-[10px] sm:text-[11px] px-3 py-1 border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)] opacity-100"
+                      className="text-label-mono text-[10px] sm:text-[11px] px-3 py-1 border border-[var(--line)] bg-[var(--bg)] text-[var(--ink)]"
                     >
                       {item}
                     </span>

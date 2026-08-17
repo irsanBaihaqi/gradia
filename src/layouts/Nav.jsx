@@ -245,8 +245,6 @@ export default function Nav() {
           </button>
         </div>
       </div>
-
-      {/* MOBILE & TABLET FULLSCREEN CURTAIN MENU */}
       <div
         ref={mobileMenuRef}
         className="fixed top-0 left-0 w-full h-0 opacity-0 bg-[var(--bg)] text-[var(--ink)] z-40 overflow-hidden flex flex-col justify-between pt-28 pb-12 px-8 border-b border-[var(--line)] md:hidden"

@@ -14,6 +14,7 @@ export default function LetSee() {
     () => {
       const containerEl = containerRef.current;
       if (!containerEl) return;
+
       const tl = gsap.timeline({
         scrollTrigger: {
           trigger: containerEl,
@@ -39,15 +40,6 @@ export default function LetSee() {
           textShadow: "0 0 20px rgba(255, 255, 255, 0.6)",
           ease: "power1.inOut",
         });
-
-      // 2. Pure Pinning (Hanya mengunci posisi tanpa animasi mengecil/menjauh)
-      ScrollTrigger.create({
-        trigger: containerEl,
-        start: "top top",
-        end: "+=100%", // Mengunci section selama 1x tinggi layar
-        pin: true,
-        pinSpacing: false,
-      });
     },
     { scope: containerRef },
   );
@@ -56,7 +48,7 @@ export default function LetSee() {
     <section
       ref={containerRef}
       id="letsee"
-      className="relative z-10 h-screen flex flex-col justify-center items-center select-none bg-[var(--bg)] transition-colors duration-300 overflow-hidden"
+      className="sticky top-0 z-10 h-screen flex flex-col justify-center items-center select-none bg-[var(--bg)] transition-colors duration-300 overflow-hidden"
     >
       <div className="flex flex-col justify-center items-center">
         <h1
